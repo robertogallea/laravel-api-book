@@ -5,12 +5,16 @@ use App\Exceptions\ApiVersionRemovedException;
 use App\Http\Middleware\DeprecatedApiVersion;
 use App\Http\Middleware\ForceJsonResponse;
 use App\Http\Responses\ProblemDetails;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use Laravel\Passport\Http\Middleware\CheckToken;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -23,6 +27,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->api(prepend: [ForceJsonResponse::class]);
         $middleware->alias([
             'deprecated' => DeprecatedApiVersion::class,
+            'client' => CheckToken::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
@@ -43,7 +48,10 @@ return Application::configure(basePath: dirname(__DIR__))
             $code = match (true) {
                 $e instanceof ValidationException => ErrorCode::ValidationFailed,
                 $e instanceof ApiVersionRemovedException => ErrorCode::ApiVersionRemoved,
+                $e instanceof AuthenticationException => ErrorCode::Unauthenticated,
+                $e instanceof AccessDeniedHttpException => ErrorCode::Forbidden,
                 $e instanceof NotFoundHttpException => ErrorCode::ResourceNotFound,
+                $e instanceof ThrottleRequestsException => ErrorCode::TooManyRequests,
                 default => ErrorCode::ServerError,
             };
 
@@ -58,11 +66,23 @@ return Application::configure(basePath: dirname(__DIR__))
                 ? ($original['message'] ?? $code->title())
                 : $code->title();
 
-            return (new ProblemDetails(
+            $problemResponse = (new ProblemDetails(
                 code: $code,
                 status: $status,
                 detail: $detail,
                 extra: array_filter(['errors' => $original['errors'] ?? null]),
             ))->toResponse($request);
+
+            // A throttled request carries Retry-After and X-RateLimit-* headers on $response,
+            // set by Laravel's throttle middleware: without them a client has no standard way
+            // to know when it is safe to retry. Content-Type is left alone, since ProblemDetails
+            // already set it to application/problem+json above.
+            foreach ($response->headers->all() as $name => $values) {
+                if (! $problemResponse->headers->has($name)) {
+                    $problemResponse->headers->set($name, $values);
+                }
+            }
+
+            return $problemResponse;
         });
     })->create();

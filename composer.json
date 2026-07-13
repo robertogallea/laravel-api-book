@@ -12,6 +12,8 @@
     "require": {
         "php": "^8.3",
         "laravel/framework": "^13.8",
+        "laravel/passport": "^13.7",
+        "laravel/sanctum": "^4.0",
         "laravel/tinker": "^3.0"
     },
     "require-dev": {
@@ -40,7 +42,8 @@
             "composer install",
             "@php -r \"file_exists('.env') || copy('.env.example', '.env');\"",
             "@php artisan key:generate",
-            "@php artisan migrate --force"
+            "@php artisan migrate --force",
+            "@php artisan passport:keys"
         ],
         "dev": [
             "Composer\\Config::disableProcessTimeout",

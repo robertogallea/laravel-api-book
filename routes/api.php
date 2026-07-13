@@ -1,10 +1,24 @@
 <?php
 
 use App\Exceptions\ApiVersionRemovedException;
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\PartnerController;
 use App\Http\Controllers\V2\BookingController as V2BookingController;
 use Illuminate\Support\Facades\Route;
+
+// Authentication is not tied to a domain version: registering or logging in does not carry
+// a data contract that Chapter 3's versioning strategy needs to protect. It stays outside the
+// v1/v2 prefixes, alongside the routes it then guards.
+Route::post('register', [AuthController::class, 'register']);
+Route::post('login', [AuthController::class, 'login']);
+Route::post('logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
+
+// Same reasoning as above, for the other population of callers: a partner does not register
+// or log in, it presents the client_id/client_secret it received once, out of band, against
+// Passport's own /oauth/token endpoint, and attaches the token it gets back to this route.
+Route::get('partner/ping', [PartnerController::class, 'ping'])->middleware('client');
 
 Route::prefix('v1')->name('v1.')->group(function () {
     Route::apiResource('events', EventController::class);

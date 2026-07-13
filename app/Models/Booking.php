@@ -12,6 +12,7 @@ class Booking extends Model
 
     protected $fillable = [
         'event_id',
+        'participant_id',
         'participant_name',
         'participant_email',
         'seats',
@@ -27,5 +28,10 @@ class Booking extends Model
     public function event(): BelongsTo
     {
         return $this->belongsTo(Event::class);
+    }
+
+    public function participant(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'participant_id');
     }
 }

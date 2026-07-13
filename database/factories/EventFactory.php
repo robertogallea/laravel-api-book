@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Event;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -18,6 +19,7 @@ class EventFactory extends Factory
     public function definition(): array
     {
         return [
+            'organizer_id' => User::factory()->organizer(),
             'title' => fake()->sentence(3),
             'description' => fake()->paragraph(),
             'starts_at' => fake()->dateTimeBetween('+1 week', '+6 months'),
