@@ -27,4 +27,15 @@ class BookingFactory extends Factory
             'seats' => fake()->numberBetween(1, 4),
         ];
     }
+
+    /**
+     * Indicate that the booking was made without a platform account, the same
+     * way CreateBookingCommand creates one from the command line.
+     */
+    public function guest(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'participant_id' => null,
+        ]);
+    }
 }

@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Booking;
 use App\Models\Event;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -25,5 +26,21 @@ class EventFactory extends Factory
             'starts_at' => fake()->dateTimeBetween('+1 week', '+6 months'),
             'capacity' => fake()->numberBetween(10, 200),
         ];
+    }
+
+    /**
+     * Indicate that the event has no seats left, with a booking that actually
+     * accounts for the full capacity, not just the flag set on its own.
+     */
+    public function soldOut(): static
+    {
+        return $this->afterCreating(function (Event $event) {
+            Booking::factory()->create([
+                'event_id' => $event->id,
+                'seats' => $event->capacity,
+            ]);
+
+            $event->update(['sold_out_at' => now()]);
+        });
     }
 }
