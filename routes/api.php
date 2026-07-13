@@ -4,6 +4,7 @@ use App\Exceptions\ApiVersionRemovedException;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\LegacyEnrollmentController;
 use App\Http\Controllers\PartnerController;
 use App\Http\Controllers\V2\BookingController as V2BookingController;
 use Illuminate\Support\Facades\Route;
@@ -19,6 +20,13 @@ Route::post('logout', [AuthController::class, 'logout'])->middleware('auth:sanct
 // or log in, it presents the client_id/client_secret it received once, out of band, against
 // Passport's own /oauth/token endpoint, and attaches the token it gets back to this route.
 Route::get('partner/ping', [PartnerController::class, 'ping'])->middleware('client');
+
+// Stands in for the legacy gestionale's own enrollment form (Chapter 11): a guest booking
+// arriving from a system with no accounts of its own, not a versioned part of this API's own
+// evolution, so it stays outside v1/v2 too, deliberately without auth:sanctum. Still throttled,
+// by IP rather than by user, exactly as Chapter 4 already does for other unauthenticated routes.
+Route::post('legacy-enrollments', [LegacyEnrollmentController::class, 'store'])
+    ->middleware('throttle:legacy-enrollments');
 
 Route::prefix('v1')->name('v1.')->group(function () {
     Route::apiResource('events', EventController::class);

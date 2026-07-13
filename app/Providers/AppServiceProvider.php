@@ -57,6 +57,13 @@ class AppServiceProvider extends ServiceProvider
         // rather than by user, with a far more permissive threshold.
         RateLimiter::for('events', fn (Request $request) => Limit::perMinute(30)->by($request->ip()));
 
+        // The legacy migration endpoint (Chapter 11) writes data and consumes capacity exactly
+        // like a booking does, but it deliberately has no authenticated user to key on: it
+        // represents a guest enrollment coming from a system with no accounts of its own. Keyed
+        // by IP, like the catalog above, but with the same strict threshold as a real booking,
+        // for the same reason.
+        RateLimiter::for('legacy-enrollments', fn (Request $request) => Limit::perMinute(5)->by($request->ip()));
+
         // Scramble generates request/response schemas straight from the code it can see (Form
         // Requests, API Resources, route middleware), but it cannot see the Problem Details
         // envelope that bootstrap/app.php wraps around every error: registered once here, this
