@@ -4,11 +4,14 @@ namespace App\Providers;
 
 use App\Domain\Booking\Contracts\BookingNotifier;
 use App\Domain\Booking\Notifiers\WebhookBookingNotifier;
+use App\Models\Event;
+use App\Support\Caching\EventCache;
 use App\Support\OpenApi\ProblemDetailsResponses;
 use App\Support\OpenApi\WebhookDocumentation;
 use Dedoc\Scramble\Scramble;
 use Dedoc\Scramble\Support\Generator\Types\MixedType;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Route;
 use Illuminate\Support\Facades\RateLimiter;
@@ -30,6 +33,20 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Lazy loading a relation still works, it just throws instead of silently issuing a
+        // query: an N+1 introduced by accident fails a test or a local request immediately,
+        // instead of surfacing only under production traffic. Left enabled in production,
+        // where the exception would be worse than the extra query it prevents.
+        Model::preventLazyLoading(! $this->app->isProduction());
+
+        // Whatever changed, an update through EventController, a cover image upload, an
+        // organizer deleting their own event, or anything else that will ever touch an Event:
+        // the cached copy is forgotten the moment the row it describes no longer matches it.
+        // One place, instead of a Cache::forget() call repeated in every action that writes
+        // to an event and hoping none is ever added, or changed, without remembering it too.
+        Event::saved(fn (Event $event) => app(EventCache::class)->forget($event->id));
+        Event::deleted(fn (Event $event) => app(EventCache::class)->forget($event->id));
+
         // Creating a booking writes data and consumes an event's capacity: a caller abusing
         // it is throttled much sooner than one merely browsing the catalog. The action already
         // requires auth:sanctum (BookingController::middleware()), so the authenticated user is
