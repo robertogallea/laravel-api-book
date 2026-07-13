@@ -7,7 +7,9 @@ use App\Domain\Booking\DataTransferObjects\CreateBookingData;
 use App\Domain\Event\ValueObjects\SeatsAvailability;
 use App\Models\Booking;
 use App\Models\Event;
+use App\Notifications\BookingConfirmed;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
 
 class CreateBookingAction
@@ -43,6 +45,14 @@ class CreateBookingAction
         });
 
         $this->notifier->notifyCreated($booking);
+
+        // On-demand, not $booking->participant->notify(...): a booking's participant_email
+        // always exists, its participant_id does not (guest bookings, CreateBookingCommand).
+        // Queued (BookingConfirmed implements ShouldQueue): the same queue connection Chapter 6
+        // already put to work for the partner webhook, so this request returns as soon as the
+        // notification job is on the queue, not once it has actually been delivered.
+        Notification::route('mail', $booking->participant_email)
+            ->notify(new BookingConfirmed($booking));
 
         return $booking;
     }
