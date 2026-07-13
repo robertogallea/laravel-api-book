@@ -2,13 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\SearchEventsRequest;
 use App\Http\Requests\StoreEventRequest;
 use App\Http\Requests\UpdateEventRequest;
 use App\Http\Requests\UploadEventCoverImageRequest;
 use App\Http\Resources\EventResource;
 use App\Models\Event;
+use App\Support\Caching\EventCache;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Support\Carbon;
 
 class EventController extends Controller implements HasMiddleware
 {
@@ -38,9 +41,23 @@ class EventController extends Controller implements HasMiddleware
         ];
     }
 
-    public function index()
+    public function index(SearchEventsRequest $request)
     {
-        return EventResource::collection(Event::query()->paginate());
+        $events = Event::query()
+            ->when($request->boolean('upcoming'), fn ($query) => $query->upcoming())
+            ->when($request->boolean('available'), fn ($query) => $query->available())
+            ->when($request->filled('from'), fn ($query) => $query->startingBetween(
+                Carbon::parse($request->query('from')),
+                Carbon::parse($request->query('to')),
+            ))
+            // mostBooked() opts out of Event::$with on purpose: it only needs a count to sort
+            // by, not every booking row. This endpoint's EventResource disagrees, it needs the
+            // full collection for every event regardless of sort, seats_available among them:
+            // with('bookings') restores it after the scope removed it.
+            ->when($request->query('sort') === 'most_booked', fn ($query) => $query->mostBooked()->with('bookings'))
+            ->paginate($request->integer('per_page', 15));
+
+        return EventResource::collection($events);
     }
 
     public function store(StoreEventRequest $request)
@@ -53,9 +70,14 @@ class EventController extends Controller implements HasMiddleware
         return (new EventResource($event))->response()->setStatusCode(201);
     }
 
-    public function show(Event $event)
+    public function show(int $event, EventCache $cache)
     {
-        return new EventResource($event);
+        // int, not Event: an implicitly bound $event would be fetched (with every booking
+        // row, Event::$with) before this method even runs, on every request, cache hit or
+        // not. findOrFail() below only runs on a miss.
+        $cached = $cache->remember($event, fn () => Event::without('bookings')->findOrFail($event));
+
+        return new EventResource($cached);
     }
 
     public function update(UpdateEventRequest $request, Event $event)
