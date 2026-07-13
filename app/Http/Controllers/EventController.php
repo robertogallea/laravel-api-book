@@ -15,6 +15,14 @@ class EventController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
+            // location itself is not going away: it is being superseded by a more structured
+            // address field the platform will introduce later. Every action whose response can
+            // include it carries the deprecation signal, unlike destroy, which does not.
+            new Middleware(
+                'deprecated:2026-10-04,'
+                    .'https://eventhub.test/deprecations/event-location',
+                only: ['index', 'show', 'store', 'update', 'uploadCoverImage'],
+            ),
             // Browsing the catalog stays open to anyone; only an authenticated organizer can
             // create or manage an event.
             new Middleware('auth:sanctum', except: ['index', 'show']),
