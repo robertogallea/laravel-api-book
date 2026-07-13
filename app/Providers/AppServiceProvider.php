@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Domain\Booking\Contracts\BookingNotifier;
+use App\Domain\Booking\Notifiers\LogBookingNotifier;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -11,7 +13,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(BookingNotifier::class, LogBookingNotifier::class);
     }
 
     /**

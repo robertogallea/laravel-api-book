@@ -19,6 +19,7 @@ class Event extends Model
         'starts_at',
         'capacity',
         'cover_image_path',
+        'sold_out_at',
     ];
 
     protected function casts(): array
@@ -26,6 +27,7 @@ class Event extends Model
         return [
             'starts_at' => 'datetime',
             'capacity' => 'integer',
+            'sold_out_at' => 'datetime',
         ];
     }
 

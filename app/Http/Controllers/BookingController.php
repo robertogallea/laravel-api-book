@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Domain\Booking\Actions\CreateBookingAction;
+use App\Domain\Booking\DataTransferObjects\CreateBookingData;
 use App\Http\Requests\ListBookingsRequest;
 use App\Http\Requests\StoreBookingRequest;
 use App\Http\Requests\UpdateBookingRequest;
@@ -22,9 +24,9 @@ class BookingController extends Controller
         return BookingResource::collection($bookings);
     }
 
-    public function store(StoreBookingRequest $request, Event $event)
+    public function store(StoreBookingRequest $request, Event $event, CreateBookingAction $action)
     {
-        $booking = $event->bookings()->create($request->validated());
+        $booking = $action($event, CreateBookingData::fromArray($request->validated()));
 
         return (new BookingResource($booking))->response()->setStatusCode(201);
     }
