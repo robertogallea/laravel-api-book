@@ -45,6 +45,9 @@ class BookingController extends Controller implements HasMiddleware
 
     public function index(ListBookingsRequest $request, Event $event)
     {
+        // A fresh, paginated relation query, not $event->bookings (Event::$with): that
+        // collection holds every booking with no limit, exactly what an event with hundreds
+        // of bookings can no longer afford to return in a single response.
         $bookings = $event->bookings()
             ->with('participant')
             ->paginate($request->integer('per_page', 15));

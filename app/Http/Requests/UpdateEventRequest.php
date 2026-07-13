@@ -25,7 +25,10 @@ class UpdateEventRequest extends FormRequest
     public function rules(): array
     {
         return [
-            // cover_image_path has its own endpoint (uploadCoverImage).
+            // organizer_id and sold_out_at are deliberately not accepted here: ownership is not
+            // reassignable through a generic update, and sold_out_at is only ever set or cleared
+            // by CreateBookingAction/CancelBookingAction, not by direct edit. cover_image_path
+            // has its own endpoint (uploadCoverImage).
             'title' => ['sometimes', 'string', 'max:255'],
             'description' => ['sometimes', 'string'],
             'location' => ['sometimes', 'nullable', 'string', 'max:255'],

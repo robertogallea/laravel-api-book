@@ -25,6 +25,10 @@ class CreateBookingAction
             // instance would lock nothing, because it was already read (and its row lock,
             // if any, released) before this transaction even began. Only a row read for the
             // first time inside this transaction can hold the lock until commit.
+            // without('bookings'): Event::$with would otherwise pull every booking row for
+            // this event into PHP for the entire time this row stays locked, only for
+            // SeatsAvailability to sum() them a moment later. Nothing past this point needs
+            // the collection itself, only the aggregate that avoids loading it.
             $lockedEvent = Event::without('bookings')->lockForUpdate()->findOrFail($event->id);
 
             $availability = SeatsAvailability::forEvent($lockedEvent);

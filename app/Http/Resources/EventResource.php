@@ -17,6 +17,14 @@ class EventResource extends JsonResource
     {
         $canSeeOperationalData = $request->user()?->can('update', $this->resource);
 
+        // relationLoaded(), not always $this->bookings: EventController::index() still eager
+        // loads every booking (Event::$with) to build this same collection once for many
+        // events, and summing it in PHP costs nothing extra there. EventController::show()
+        // caches the event without that collection on purpose, so summing it would either
+        // lazy load (blocked by Model::preventLazyLoading()) or silently defeat the cache by
+        // pulling every booking row back in on every request; a fresh aggregate query costs
+        // one lightweight query instead, only when the collection was never loaded to begin
+        // with.
         $bookedSeats = $this->relationLoaded('bookings')
             ? $this->bookings->sum('seats')
             : $this->bookings()->sum('seats');

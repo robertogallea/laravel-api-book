@@ -10,14 +10,14 @@ use App\Http\Controllers\PartnerController;
 use App\Http\Controllers\V2\BookingController as V2BookingController;
 use Illuminate\Support\Facades\Route;
 
+// Authentication is not tied to a domain version: registering or logging in does not carry
+// a data contract that Chapter 3's versioning strategy needs to protect. It stays outside the
+// v1/v2 prefixes, alongside the routes it then guards.
 // Not versioned like everything below: whether EventHub is up does not depend on which API
 // version a caller is on. Public, unauthenticated and unthrottled on purpose, an orchestrator
 // or load balancer polling this route frequently must never be turned away by a rate limit.
 Route::get('health', [HealthController::class, 'check']);
 
-// Authentication is not tied to a domain version: registering or logging in does not carry
-// a data contract that Chapter 3's versioning strategy needs to protect. It stays outside the
-// v1/v2 prefixes, alongside the routes it then guards.
 Route::post('register', [AuthController::class, 'register']);
 Route::post('login', [AuthController::class, 'login']);
 Route::post('logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
