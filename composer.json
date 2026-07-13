@@ -24,6 +24,7 @@
         "mockery/mockery": "^1.6",
         "nunomaduro/collision": "^8.6",
         "pestphp/pest": "^4.7",
+        "pestphp/pest-plugin-drift": "^4.1",
         "pestphp/pest-plugin-laravel": "^4.1"
     },
     "autoload": {
@@ -58,7 +59,8 @@
         "format": "vendor/bin/pint",
         "quality": [
             "@lint",
-            "@test"
+            "@test",
+            "@php artisan scramble:analyze"
         ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
