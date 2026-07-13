@@ -14,13 +14,13 @@ class MigrateLegacyEnrollmentsCommand extends Command
     protected $signature = 'legacy:migrate-enrollments
         {course : The legacy course id}
         {event : The corresponding EventHub event id}
-        {--database= : Path to the legacy SQLite database (defaults to ../legacy/database.sqlite)}';
+        {--database= : Path to the legacy SQLite database (defaults to legacy/database.sqlite)}';
 
     protected $description = 'Backfill a legacy course\'s existing enrollments into EventHub bookings';
 
     public function handle(CreateBookingAction $action): int
     {
-        $databasePath = $this->option('database') ?? base_path('../legacy/database.sqlite');
+        $databasePath = $this->option('database') ?? base_path('legacy/database.sqlite');
 
         // PDO's SQLite driver silently creates an empty database file for a path that
         // does not exist yet, instead of failing: without this check, a typo'd or stale
