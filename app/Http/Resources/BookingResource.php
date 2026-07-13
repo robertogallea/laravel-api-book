@@ -21,6 +21,13 @@ class BookingResource extends JsonResource
             'participant_email' => $this->participant_email,
             'seats' => $this->seats,
             'created_at' => $this->created_at->toIso8601String(),
+            // Null for a booking created without an authenticated user (e.g. via
+            // CreateBookingCommand, Capitolo 2): a guest booking has no platform account to
+            // describe, only the participant_name/participant_email snapshot above.
+            'participant' => $this->participant ? [
+                'id' => $this->participant->id,
+                'role' => $this->participant->role->value,
+            ] : null,
         ];
     }
 }
