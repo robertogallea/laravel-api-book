@@ -3,14 +3,17 @@
 namespace App\Providers;
 
 use App\Domain\Booking\Contracts\BookingNotifier;
-use App\Domain\Booking\Notifiers\LogBookingNotifier;
+use App\Domain\Booking\Notifiers\WebhookBookingNotifier;
 use App\Support\OpenApi\ProblemDetailsResponses;
+use App\Support\OpenApi\WebhookDocumentation;
 use Dedoc\Scramble\Scramble;
 use Dedoc\Scramble\Support\Generator\Types\MixedType;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Route;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Str;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -19,7 +22,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->bind(BookingNotifier::class, LogBookingNotifier::class);
+        $this->app->bind(BookingNotifier::class, WebhookBookingNotifier::class);
     }
 
     /**
@@ -55,5 +58,33 @@ class AppServiceProvider extends ServiceProvider
             '*/delete/responses/*',
             '*logout/post/responses/*',
         ], throw: false);
+
+        // A second, narrower document for the audience that never sees the rest of this book's
+        // documentation: partners integrating over Client Credentials, not the team building
+        // EventHub's own frontend. It must come after the transformer above so it inherits the
+        // same Problem Details correction, not a second, divergent one.
+        Scramble::registerApi('partner', [
+            'ui' => ['title' => 'EventHub Partner API'],
+            'info' => [
+                'description' => 'The subset of EventHub reachable with a partner Client '
+                    .'Credentials token, distinct from the API used by EventHub\'s own frontend '
+                    .'and by individual organizers or participants.',
+            ],
+        ])
+            ->routes(fn (Route $route) => Str::is('api/partner/*', $route->uri()))
+            ->expose(
+                ui: fn ($router, $action) => $router->get('docs/partner', $action)
+                    ->name('scramble.docs.partner.ui'),
+                // Scramble has no concept of a request EventHub sends rather than receives, so
+                // the notification built in this chapter cannot be discovered from a route like
+                // every other operation here: this wraps the generated document instead of
+                // replacing it, adding the OpenAPI 3.1 "webhooks" object by hand.
+                document: fn ($router, $action) => $router->get('docs/partner.json', function () use ($action) {
+                    $document = app()->call($action)->getData(true);
+                    $document['webhooks'] = WebhookDocumentation::toArray();
+
+                    return response()->json($document, options: JSON_PRETTY_PRINT);
+                })->name('scramble.docs.partner.document'),
+            );
     }
 }

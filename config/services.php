@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'partner' => [
+        'webhook_url' => env('PARTNER_WEBHOOK_URL'),
+        'webhook_max_attempts' => (int) env('PARTNER_WEBHOOK_MAX_ATTEMPTS', 3),
+        'webhook_secret' => env('PARTNER_WEBHOOK_SECRET'),
+    ],
+
 ];
