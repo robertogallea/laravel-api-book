@@ -1,6 +1,8 @@
 <?php
 
 use App\Enums\ErrorCode;
+use App\Exceptions\ApiVersionRemovedException;
+use App\Http\Middleware\DeprecatedApiVersion;
 use App\Http\Middleware\ForceJsonResponse;
 use App\Http\Responses\ProblemDetails;
 use Illuminate\Foundation\Application;
@@ -19,6 +21,9 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->api(prepend: [ForceJsonResponse::class]);
+        $middleware->alias([
+            'deprecated' => DeprecatedApiVersion::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // EventHub has no browser-facing routes: every response is JSON.
@@ -37,6 +42,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
             $code = match (true) {
                 $e instanceof ValidationException => ErrorCode::ValidationFailed,
+                $e instanceof ApiVersionRemovedException => ErrorCode::ApiVersionRemoved,
                 $e instanceof NotFoundHttpException => ErrorCode::ResourceNotFound,
                 default => ErrorCode::ServerError,
             };
