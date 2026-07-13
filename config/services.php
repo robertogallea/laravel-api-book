@@ -41,4 +41,9 @@ return [
         'webhook_secret' => env('PARTNER_WEBHOOK_SECRET'),
     ],
 
+    'payment' => [
+        'key' => env('PAYMENT_GATEWAY_KEY'),
+        'secret' => env('PAYMENT_GATEWAY_SECRET'),
+    ],
+
 ];
