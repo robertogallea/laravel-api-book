@@ -6,6 +6,7 @@ use App\Http\Middleware\DeprecatedApiVersion;
 use App\Exceptions\IdempotencyKeyConflictException;
 use App\Exceptions\IdempotencyKeyInProgressException;
 use App\Http\Middleware\ForceJsonResponse;
+use App\Http\Middleware\LogFailedRequests;
 use App\Http\Responses\ProblemDetails;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
@@ -27,6 +28,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->api(prepend: [ForceJsonResponse::class]);
+        $middleware->api(append: [LogFailedRequests::class]);
         $middleware->alias([
             'deprecated' => DeprecatedApiVersion::class,
             'client' => CheckToken::class,
