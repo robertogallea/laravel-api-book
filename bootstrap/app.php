@@ -3,6 +3,8 @@
 use App\Enums\ErrorCode;
 use App\Exceptions\ApiVersionRemovedException;
 use App\Http\Middleware\DeprecatedApiVersion;
+use App\Exceptions\IdempotencyKeyConflictException;
+use App\Exceptions\IdempotencyKeyInProgressException;
 use App\Http\Middleware\ForceJsonResponse;
 use App\Http\Responses\ProblemDetails;
 use Illuminate\Auth\AuthenticationException;
@@ -52,6 +54,8 @@ return Application::configure(basePath: dirname(__DIR__))
                 $e instanceof AccessDeniedHttpException => ErrorCode::Forbidden,
                 $e instanceof NotFoundHttpException => ErrorCode::ResourceNotFound,
                 $e instanceof ThrottleRequestsException => ErrorCode::TooManyRequests,
+                $e instanceof IdempotencyKeyConflictException => ErrorCode::IdempotencyKeyConflict,
+                $e instanceof IdempotencyKeyInProgressException => ErrorCode::IdempotencyKeyInProgress,
                 default => ErrorCode::ServerError,
             };
 

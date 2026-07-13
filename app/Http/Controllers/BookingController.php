@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Domain\Booking\Actions\CreateBookingAction;
 use App\Domain\Booking\DataTransferObjects\CreateBookingData;
+use App\Http\Middleware\EnsureIdempotentRequest;
 use App\Http\Requests\ListBookingsRequest;
 use App\Http\Requests\StoreBookingRequest;
 use App\Http\Requests\UpdateBookingRequest;
@@ -28,6 +29,10 @@ class BookingController extends Controller implements HasMiddleware
             // one: it gets its own, stricter, named limiter (AppServiceProvider::boot()) instead
             // of sharing whatever default throttling other actions might get later.
             new Middleware('throttle:bookings', only: ['store']),
+            // A retried request carrying a key already seen short-circuits here, before
+            // CreateBookingAction ever runs again: it still counts against the caller's throttle
+            // budget above, like any other request, only the domain logic is not repeated.
+            new Middleware(EnsureIdempotentRequest::class, only: ['store']),
             // Listing an event's bookings is the event owner's business, not any single
             // booking's: the ability lives on EventPolicy. Reading, changing or cancelling one
             // specific booking is instead a question of who that booking belongs to.
