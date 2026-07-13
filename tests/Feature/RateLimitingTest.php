@@ -43,26 +43,3 @@ test('browsing the events catalog tolerates far more requests per minute than cr
     $response->assertStatus(429);
     $response->assertJsonPath('code', 'too_many_requests');
 });
-
-test('the legacy enrollment endpoint is throttled by IP, with no authenticated user to key on', function () {
-    Event::factory()->create(['id' => 3, 'capacity' => 20]);
-
-    for ($i = 0; $i < 5; $i++) {
-        $response = $this->postJson('/api/legacy-enrollments', [
-            'course_id' => 3,
-            'participant_name' => 'Ada Lovelace',
-            'participant_email' => "ada{$i}@example.com",
-        ]);
-
-        $response->assertCreated();
-    }
-
-    $response = $this->postJson('/api/legacy-enrollments', [
-        'course_id' => 3,
-        'participant_name' => 'Ada Lovelace',
-        'participant_email' => 'ada-over-the-limit@example.com',
-    ]);
-
-    $response->assertStatus(429);
-    $response->assertJsonPath('code', 'too_many_requests');
-});

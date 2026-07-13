@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Domain\Event\ValueObjects\SeatsAvailability;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -29,7 +30,16 @@ class UpdateEventRequest extends FormRequest
             'description' => ['sometimes', 'string'],
             'location' => ['sometimes', 'nullable', 'string', 'max:255'],
             'starts_at' => ['sometimes', 'date'],
-            'capacity' => ['sometimes', 'integer', 'min:1'],
+            'capacity' => [
+                'sometimes', 'integer', 'min:1',
+                function (string $attribute, mixed $value, \Closure $fail): void {
+                    $booked = SeatsAvailability::forEvent($this->route('event'))->booked;
+
+                    if ($value < $booked) {
+                        $fail("The {$attribute} field must be at least {$booked}, the number of seats already booked.");
+                    }
+                },
+            ],
         ];
     }
 }
