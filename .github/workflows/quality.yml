@@ -22,6 +22,8 @@ jobs:
 
       - run: php artisan key:generate
 
+      - run: php artisan passport:keys-generate
+
       - run: touch database/database.sqlite
 
       - run: composer quality
