@@ -43,6 +43,29 @@ differs between the two: for example, row locking (`lockForUpdate()`) is a no-op
 enforced on MySQL. Prefer the Docker path whenever you need to verify something that depends on
 the production database engine.
 
+## Following the book chapter by chapter
+
+This repository's git history is organized to mirror the book, not just its final state.
+Every chapter has a corresponding tag marking exactly what the codebase looked like once that
+chapter was complete, and chapters substantial enough to introduce several distinct concepts
+in sequence also have intermediate tags for their main steps.
+
+- `chapter-NN` marks the end of chapter N (`chapter-00` for the Introduction, `chapter-13` for
+  Appendix A, `chapter-14` for Appendix B).
+- `chapter-NN-step-MM` marks a specific step within a chapter, for the chapters that have more
+  than one.
+- Purely editorial chapters (the Introduction, the Conclusions, Appendix B) introduce no code
+  of their own: their tag points to the same commit as the chapter before them.
+
+To check out the code exactly as it was at a given point in the book:
+
+```bash
+git checkout chapter-04
+```
+
+Go back to the latest state with `git checkout main`. See `CHANGELOG.md` for the full list of
+tags and a one-line description of what each one introduces.
+
 ## Testing
 
 The test suite uses Pest.
