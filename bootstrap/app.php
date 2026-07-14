@@ -2,9 +2,9 @@
 
 use App\Enums\ErrorCode;
 use App\Exceptions\ApiVersionRemovedException;
-use App\Http\Middleware\DeprecatedApiVersion;
 use App\Exceptions\IdempotencyKeyConflictException;
 use App\Exceptions\IdempotencyKeyInProgressException;
+use App\Http\Middleware\DeprecatedApiVersion;
 use App\Http\Middleware\ForceJsonResponse;
 use App\Http\Middleware\LogFailedRequests;
 use App\Http\Responses\ProblemDetails;
