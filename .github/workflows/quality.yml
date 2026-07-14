@@ -22,7 +22,7 @@ jobs:
 
       - run: php artisan key:generate
 
-      - run: php artisan passport:keys-generate
+      - run: php artisan passport:keys
 
       - run: touch database/database.sqlite
 
